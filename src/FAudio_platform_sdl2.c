@@ -143,6 +143,8 @@ void FAudio_PlatformInit(
 ) {
 	SDL_AudioDeviceID device;
 	SDL_AudioSpec want, have;
+	const char *envvar;
+	int forcedSamples;
 
 	FAudio_assert(mixFormat != NULL);
 	FAudio_assert(updateSize != NULL);
@@ -167,6 +169,25 @@ void FAudio_PlatformInit(
 	else
 	{
 		want.samples = want.freq / 100;
+	}
+
+	envvar = SDL_getenv("RAL_AUDIO_BUFFERSIZE");
+	if (envvar != NULL)
+	{
+		forcedSamples = SDL_atoi(envvar);
+		if (forcedSamples > 0)
+		{
+			if (forcedSamples > SDL_MAX_UINT16)
+			{
+				SDL_Log("RAL_AUDIO_BUFFERSIZE is too large (%d), clamping to %d", forcedSamples, SDL_MAX_UINT16);
+				forcedSamples = SDL_MAX_UINT16;
+			}
+			want.samples = (Uint16) forcedSamples;
+		}
+		else
+		{
+			SDL_Log("Ignoring invalid RAL_AUDIO_BUFFERSIZE: %s", envvar);
+		}
 	}
 
 	/* Open the device (or at least try to) */
